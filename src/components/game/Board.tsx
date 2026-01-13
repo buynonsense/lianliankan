@@ -30,17 +30,8 @@ export default function Board({ board, onTileClick, selectedPosition, highlightP
     return new Set(highlightPath.map(pos => `${pos.row}-${pos.col}`))
   }, [highlightPath])
 
-  // 优化：比较两个 Map 是否相等，避免不必要的状态更新
-  const areMapsEqual = useCallback((map1: Map<string, TilePosition>, map2: Map<string, TilePosition>): boolean => {
-    if (map1.size !== map2.size) return false
-    for (const [key, value] of map1) {
-      const other = map2.get(key)
-      if (!other || other.x !== value.x || other.y !== value.y) return false
-    }
-    return true
-  }, [])
-
   // 优化：只在路径变化时计算位置，使用 requestAnimationFrame
+  // 使用 ref 存储最新值，避免依赖循环
   const updateTilePositions = useCallback(() => {
     const container = containerRef.current
     if (!container || highlightPath.length === 0) return
@@ -68,7 +59,7 @@ export default function Board({ board, onTileClick, selectedPosition, highlightP
         if (row && col) {
           const key = `${row}-${col}`
           // 只计算路径上的方块位置，优化性能
-          if (pathSet.has(key)) {
+          if (highlightPath.some(pos => `${pos.row}-${pos.col}` === key)) {
             const rect = tile.getBoundingClientRect()
             const containerRect = container.getBoundingClientRect()
             const x = rect.left - containerRect.left + rect.width / 2
@@ -79,22 +70,32 @@ export default function Board({ board, onTileClick, selectedPosition, highlightP
       })
 
       // 只有位置真正改变时才更新状态，避免不必要的渲染
-      if (newPositions.size > 0 && !areMapsEqual(newPositions, tilePositions)) {
-        setTilePositions(newPositions)
-      }
+      setTilePositions(prevPositions => {
+        if (newPositions.size === 0 && prevPositions.size === 0) {
+          return prevPositions
+        }
+        // 简单比较：大小不同或任意 key 不同就更新
+        if (newPositions.size !== prevPositions.size) return newPositions
+        for (const [key, val] of newPositions) {
+          const prev = prevPositions.get(key)
+          if (!prev || prev.x !== val.x || prev.y !== val.y) return newPositions
+        }
+        return prevPositions
+      })
     })
-  }, [highlightPath, pathSet, tilePositions, areMapsEqual])
+  }, [highlightPath])
 
   // 优化：使用 useLayoutEffect 替代 useEffect + setTimeout，获得更可靠的 DOM 时序
+  // 只依赖 highlightPath，避免循环依赖
   useLayoutEffect(() => {
     if (highlightPath.length === 0) {
-      setTilePositions(new Map())
+      setTilePositions(prev => prev.size === 0 ? prev : new Map())
       return
     }
 
     // 立即更新位置，无需延迟
     updateTilePositions()
-  }, [highlightPath, updateTilePositions])
+  }, [highlightPath])
 
   // 优化：抖动动画逻辑
   useEffect(() => {
@@ -139,15 +140,55 @@ export default function Board({ board, onTileClick, selectedPosition, highlightP
     return pathCommands.join(' ')
   }, [highlightPath, tilePositions])
 
-  // 优化：选中状态判断
+  // 优化：选中状态判断 - 只有起点和终点显示黄色边框
   const isSelected = useCallback((row: number, col: number) => {
+    // 如果有高亮路径，只有路径的起点和终点显示黄色边框
+    if (highlightPath.length >= 2) {
+      const start = highlightPath[0]
+      const end = highlightPath[highlightPath.length - 1]
+      return (start.row === row && start.col === col) || (end.row === row && end.col === col)
+    }
+    // 否则只显示当前选中的单个方块
     return selectedPosition?.row === row && selectedPosition?.col === col
-  }, [selectedPosition])
+  }, [selectedPosition, highlightPath])
 
-  // 优化：路径高亮判断
+  // 优化：路径高亮判断 - 排除拐角处的方块
   const isPathHighlighted = useCallback((row: number, col: number) => {
-    return pathSet.has(`${row}-${col}`)
-  }, [pathSet])
+    if (highlightPath.length < 2) return false
+
+    // 起点和终点不需要背景色高亮（已有黄色边框）
+    const start = highlightPath[0]
+    const end = highlightPath[highlightPath.length - 1]
+    if ((start.row === row && start.col === col) || (end.row === row && end.col === col)) {
+      return false
+    }
+
+    // 检查是否在路径中间（排除拐角）
+    const pathIndex = highlightPath.findIndex(pos => pos.row === row && pos.col === col)
+    if (pathIndex === -1) return false
+
+    // 拐角判断：前后方向变化的点就是拐角
+    // 只有当前后方向一致时才高亮（直线部分）
+    const prev = highlightPath[pathIndex - 1]
+    const next = highlightPath[pathIndex + 1]
+
+    if (!prev || !next) return false
+
+    // 判断方向：row变化为垂直，col变化为水平
+    const prevIsVertical = prev.row !== row
+    const nextIsVertical = next.row !== row
+
+    // 如果前后方向一致，说明是直线部分，需要高亮
+    return prevIsVertical === nextIsVertical
+  }, [highlightPath])
+
+  // 优化：判断是否为起点或终点（用于抖动特效）
+  const isEndpoint = useCallback((row: number, col: number) => {
+    if (highlightPath.length < 2) return false
+    const start = highlightPath[0]
+    const end = highlightPath[highlightPath.length - 1]
+    return (start.row === row && start.col === col) || (end.row === row && end.col === col)
+  }, [highlightPath])
 
   // 优化：添加 ResizeObserver 支持，处理棋盘大小变化
   useEffect(() => {
@@ -168,7 +209,7 @@ export default function Board({ board, onTileClick, selectedPosition, highlightP
         resizeObserverRef.current.disconnect()
       }
     }
-  }, [highlightPath, updateTilePositions])
+  }, [highlightPath])
 
   // 优化：组件生命周期管理
   useEffect(() => {
@@ -193,16 +234,58 @@ export default function Board({ board, onTileClick, selectedPosition, highlightP
 
   return (
     <div ref={containerRef} className="relative inline-block p-4 bg-gray-800 rounded-lg">
+      {/* 方块网格层 - 底层 */}
+      <div
+        className="grid gap-1 grid-container"
+        style={{
+          gridTemplateColumns: `repeat(${board[0].length}, 1fr)`,
+          gap: '4px',
+          position: 'relative',
+          zIndex: 1
+        }}
+      >
+        {board.map((row, rowIndex) =>
+          row.map((tile, colIndex) => {
+            const isPath = isPathHighlighted(rowIndex, colIndex)
+            const isCurrentSelected = isSelected(rowIndex, colIndex)
+            const shouldShake = shake && isEndpoint(rowIndex, colIndex)
+
+            return (
+              <div
+                key={`${rowIndex}-${colIndex}`}
+                data-tile
+                data-row={rowIndex}
+                data-col={colIndex}
+                onClick={() => !isProcessing && onTileClick({ row: rowIndex, col: colIndex }, tile)}
+                className={`
+                  w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20
+                  rounded-lg cursor-pointer transition-all duration-200
+                  flex items-center justify-center relative
+                  ${isCurrentSelected ? 'ring-4 ring-yellow-400 scale-110 z-10' : ''}
+                  ${isPath ? 'bg-gray-600' : 'bg-gray-700 hover:bg-gray-600'}
+                  ${shouldShake ? 'animate-bounce' : ''}
+                  ${isProcessing ? 'cursor-wait opacity-75' : ''}
+                `}
+                style={isCurrentSelected ? { position: 'relative', zIndex: 10 } : {}}
+              >
+                {tile && <Tile type={tile.type} />}
+              </div>
+            )
+          })
+        )}
+      </div>
+
       {/*
-        SVG 连接线层 - 只在有路径时渲染
+        SVG 连接线层 - 顶层，覆盖在方块上方
         使用双层路径实现发光效果：
         - 外层：较宽，半透明，营造发光感
         - 内层：较细，高亮，显示实际路径
+        注意：使用 pointer-events-none 确保点击能穿透到下方的方块
       */}
       {pathData && (
         <svg
           className="absolute inset-0 pointer-events-none"
-          style={{ width: '100%', height: '100%', zIndex: 1 }}
+          style={{ width: '100%', height: '100%', zIndex: 2 }}
           role="img"
           aria-label={`连接路径：${highlightPath.length} 个方块`}
         >
@@ -228,46 +311,6 @@ export default function Board({ board, onTileClick, selectedPosition, highlightP
           />
         </svg>
       )}
-
-      {/* 方块网格层 */}
-      <div
-        className="grid gap-1 grid-container"
-        style={{
-          gridTemplateColumns: `repeat(${board[0].length}, 1fr)`,
-          gap: '4px',
-          position: 'relative',
-          zIndex: 2
-        }}
-      >
-        {board.map((row, rowIndex) =>
-          row.map((tile, colIndex) => {
-            const isPath = isPathHighlighted(rowIndex, colIndex)
-            const isCurrentSelected = isSelected(rowIndex, colIndex)
-            const shouldShake = shake && isPath
-
-            return (
-              <div
-                key={`${rowIndex}-${colIndex}`}
-                data-tile
-                data-row={rowIndex}
-                data-col={colIndex}
-                onClick={() => !isProcessing && onTileClick({ row: rowIndex, col: colIndex }, tile)}
-                className={`
-                  w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20
-                  rounded-lg cursor-pointer transition-all duration-200
-                  flex items-center justify-center relative
-                  ${isCurrentSelected ? 'ring-4 ring-yellow-400 scale-110' : ''}
-                  ${isPath ? 'bg-gray-600' : 'bg-gray-700 hover:bg-gray-600'}
-                  ${shouldShake ? 'animate-bounce' : ''}
-                  ${isProcessing ? 'cursor-wait opacity-75' : ''}
-                `}
-              >
-                {tile && <Tile type={tile.type} />}
-              </div>
-            )
-          })
-        )}
-      </div>
     </div>
   )
 }
