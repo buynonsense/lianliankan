@@ -9,15 +9,16 @@ const submitAttempts = new Map<string, number>()
 const RATE_LIMIT_WINDOW = 30 * 1000 // 30秒
 const MAX_SUBMITS_PER_WINDOW = 5
 
-function checkRateLimit(userId: string): boolean {
+function checkRateLimit(userId: number): boolean {
   const now = Date.now()
-  const lastAttempt = submitAttempts.get(userId) || 0
+  const userIdStr = userId.toString()
+  const lastAttempt = submitAttempts.get(userIdStr) || 0
 
   if (now - lastAttempt < RATE_LIMIT_WINDOW) {
     return false
   }
 
-  submitAttempts.set(userId, now)
+  submitAttempts.set(userIdStr, now)
 
   // 清理过期记录（简单实现，实际应使用更优雅的方案）
   if (submitAttempts.size > 1000) {

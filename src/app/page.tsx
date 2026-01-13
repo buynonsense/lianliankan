@@ -2,7 +2,7 @@ import Link from 'next/link'
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex flex-col items-center justify-center py-12 px-4">
+    <div className="bg-gradient-to-br from-blue-50 to-purple-50 flex flex-col items-center justify-center py-12 px-4">
       <div className="max-w-2xl w-full bg-white rounded-2xl shadow-2xl p-8 md:p-12">
         {/* 标题区域 */}
         <div className="text-center mb-8">

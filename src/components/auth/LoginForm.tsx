@@ -2,17 +2,17 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useToast } from '@/context/ToastContext'
 
 export default function LoginForm() {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
-  const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const router = useRouter()
+  const { success, error, info } = useToast()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setError('')
     setLoading(true)
 
     try {
@@ -28,10 +28,14 @@ export default function LoginForm() {
         throw new Error(data.error || '登录失败')
       }
 
-      router.push('/game')
-      router.refresh()
+      success('登录成功！欢迎回来！')
+      setTimeout(() => {
+        info('正在进入游戏...')
+        router.push('/game')
+        router.refresh()
+      }, 800)
     } catch (err: any) {
-      setError(err.message)
+      error(err.message)
     } finally {
       setLoading(false)
     }
@@ -40,11 +44,6 @@ export default function LoginForm() {
   return (
     <div className="w-full max-w-md">
       <h2 className="text-2xl font-bold text-center mb-6 text-gray-900">登录</h2>
-      {error && (
-        <div className="bg-red-100 border border-red-400 text-red-800 font-medium px-4 py-3 rounded mb-4">
-          {error}
-        </div>
-      )}
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label className="block text-sm font-semibold mb-1 text-gray-800">用户名</label>

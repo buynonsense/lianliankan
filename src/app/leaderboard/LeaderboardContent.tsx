@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useToast } from '@/context/ToastContext'
 
 interface LeaderboardEntry {
   rank: number
@@ -13,7 +14,7 @@ export default function LeaderboardContent() {
   const [type, setType] = useState<'total' | 'daily' | 'weekly'>('total')
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([])
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
+  const { error, info } = useToast()
 
   useEffect(() => {
     fetchLeaderboard()
@@ -21,7 +22,6 @@ export default function LeaderboardContent() {
 
   const fetchLeaderboard = async () => {
     setLoading(true)
-    setError('')
 
     try {
       const res = await fetch(`/api/leaderboard?type=${type}&limit=20`)
@@ -32,8 +32,9 @@ export default function LeaderboardContent() {
       }
 
       setLeaderboard(data.leaderboard)
+      info(`已加载${getTypeLabel()}`)
     } catch (err: any) {
-      setError(err.message)
+      error(err.message)
     } finally {
       setLoading(false)
     }
@@ -56,13 +57,7 @@ export default function LeaderboardContent() {
     )
   }
 
-  if (error) {
-    return (
-      <div className="bg-red-100 border border-red-400 text-red-800 font-medium px-4 py-3 rounded">
-        {error}
-      </div>
-    )
-  }
+  // 错误状态已通过Toast处理，这里只处理加载状态
 
   return (
     <div className="space-y-4">

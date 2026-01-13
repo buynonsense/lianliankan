@@ -2,22 +2,27 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useToast } from '@/context/ToastContext'
 
 export default function RegisterForm() {
   const [username, setUsername] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
-  const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const router = useRouter()
+  const { success, error, warning, info } = useToast()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setError('')
 
     if (password !== confirmPassword) {
-      setError('两次输入的密码不一致')
+      warning('两次输入的密码不一致')
+      return
+    }
+
+    if (password.length < 6) {
+      warning('密码长度至少需要6位')
       return
     }
 
@@ -36,10 +41,14 @@ export default function RegisterForm() {
         throw new Error(data.error || '注册失败')
       }
 
-      router.push('/game')
-      router.refresh()
+      success('注册成功！欢迎加入连连看！')
+      setTimeout(() => {
+        info('正在进入游戏...')
+        router.push('/game')
+        router.refresh()
+      }, 1000)
     } catch (err: any) {
-      setError(err.message)
+      error(err.message)
     } finally {
       setLoading(false)
     }
@@ -48,11 +57,6 @@ export default function RegisterForm() {
   return (
     <div className="w-full max-w-md">
       <h2 className="text-2xl font-bold text-center mb-6 text-gray-900">注册</h2>
-      {error && (
-        <div className="bg-red-100 border border-red-400 text-red-800 font-medium px-4 py-3 rounded mb-4">
-          {error}
-        </div>
-      )}
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label className="block text-sm font-semibold mb-1 text-gray-800">用户名</label>
