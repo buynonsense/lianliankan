@@ -1,0 +1,57 @@
+services:
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=file:/app/data/lianliankan.db
+      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
+      - JWT_SECRET=${JWT_SECRET}
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # 可选：使用SQLite的开发环境
+  dev:
+    build: .
+    ports:
+      - "3001:3000"
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=file:/app/data/lianliankan-dev.db
+      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET:-dev-secret}
+      - JWT_SECRET=${JWT_SECRET:-dev-jwt-secret}
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - ./data:/app/data
+      - ./logs:/app/logs
+    command: npm run dev
+    restart: unless-stopped
+    profiles:
+      - dev
+
+  # 可选：使用PostgreSQL（如果需要替换SQLite）
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_DB=lianliankan
+      - POSTGRES_USER=lianliankan
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-lianliankan123}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    profiles:
+      - postgres
+
+volumes:
+  postgres_data:

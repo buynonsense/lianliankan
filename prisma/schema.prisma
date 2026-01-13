@@ -1,0 +1,62 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./lianliankan.db"
+}
+
+// 用户模型
+model User {
+  id            Int            @id @default(autoincrement())
+  username      String         @unique
+  email         String         @unique
+  passwordHash  String
+  totalScore    Int            @default(0)
+  gamesPlayed   Int            @default(0)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  gameRecords   GameRecord[]
+  scoreRecords  ScoreRecord[]
+
+  @@map("users")
+}
+
+// 游戏记录模型
+model GameRecord {
+  id          Int       @id @default(autoincrement())
+  userId      Int
+  score       Int
+  timeSeconds Int
+  moves       Int
+  boardSize   Int
+  difficulty  String?
+  completed   Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+
+  user        User      @relation(fields: [userId], references: [id])
+  scoreRecords ScoreRecord[]
+
+  @@map("game_records")
+}
+
+// 积分记录模型
+model ScoreRecord {
+  id            Int        @id @default(autoincrement())
+  userId        Int
+  gameRecordId  Int?
+  scoreChange   Int
+  reason        String?
+  createdAt     DateTime   @default(now())
+
+  user          User       @relation(fields: [userId], references: [id])
+  gameRecord    GameRecord? @relation(fields: [gameRecordId], references: [id])
+
+  @@map("score_records")
+}
