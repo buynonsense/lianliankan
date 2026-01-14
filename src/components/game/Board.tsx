@@ -21,7 +21,7 @@ export default function Board({ board, onTileClick, selectedPosition, highlightP
   const [shake, setShake] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
   const [tilePositions, setTilePositions] = useState<Map<string, TilePosition>>(new Map())
-  const animationFrameRef = useRef<number>()
+  const animationFrameRef = useRef<number | undefined>(undefined)
   const isMountedRef = useRef<boolean>(true)
   const resizeObserverRef = useRef<ResizeObserver | null>(null)
 
