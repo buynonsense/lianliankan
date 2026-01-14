@@ -1,7 +1,10 @@
 import { SignJWT, jwtVerify } from 'jose'
 import { cookies } from 'next/headers'
 
-const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret'
+// 在生产环境中必须设置 JWT_SECRET 环境变量
+const JWT_SECRET = process.env.JWT_SECRET || (process.env.NODE_ENV === 'production'
+  ? (() => { throw new Error('JWT_SECRET environment variable is required') })()
+  : 'dev-secret-for-local-development-only')
 const JWT_EXPIRES_IN = '7d'
 
 interface JWTPayload {
