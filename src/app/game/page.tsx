@@ -23,7 +23,7 @@ export default function GamePage() {
   const [isProcessing, setIsProcessing] = useState(false)
   const [startTime, setStartTime] = useState<number | null>(null)
 
-  // 计时器
+  // 游戏计时器
   useEffect(() => {
     let interval: NodeJS.Timeout
     if (isPlaying && !isPaused && startTime) {
@@ -62,7 +62,7 @@ export default function GamePage() {
     } catch (error: any) {
       error(error.message)
     }
-  }, [difficulty])
+  }, [difficulty, success, error])
 
   // 处理方块点击
   const handleTileClick = useCallback(async (position: Position, tile: TileType | null) => {
@@ -168,12 +168,8 @@ export default function GamePage() {
       const data = await res.json()
 
       if (res.ok) {
-        success(`🎉 恭喜完成！获得 ${data.score} 积分！`, 5000)
+        success(`🎉 恭喜完成！获得 ${data.score} 积分！`, 3000)
         setIsPlaying(false)
-        // 延迟显示选项，让用户看到成功消息
-        setTimeout(() => {
-          info('可以继续游戏或查看排行榜', 3000)
-        }, 1000)
       } else {
         error(data.error || '保存成绩失败')
         // 如果验证失败，在开发环境显示详细信息用于调试
@@ -188,7 +184,7 @@ export default function GamePage() {
     } catch (error: any) {
       error(error.message)
     }
-  }, [startTime, moves, difficulty, board])
+  }, [startTime, moves, difficulty, board, success, error])
 
   // 临时分数计算（客户端显示用）
   const calculateTempScore = (timeSeconds: number, moves: number, difficulty: string, boardSize: number) => {
@@ -239,16 +235,18 @@ export default function GamePage() {
 
         {/* 游戏完成后的快捷操作 */}
         {!isPlaying && board && (
-          <div className="flex gap-2">
+          <div className="flex gap-2 items-center">
             <button
               onClick={startNewGame}
               className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+              aria-label="立即开始新游戏"
             >
-              再玩一局
+              立即开始新游戏
             </button>
             <button
               onClick={handleViewLeaderboard}
               className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors font-medium"
+              aria-label="查看排行榜"
             >
               查看排行榜
             </button>
@@ -273,20 +271,49 @@ export default function GamePage() {
 
       {/* 游戏棋盘 */}
       <div className="flex justify-center mb-6">
-        {board ? (
-          <Board
-            board={board}
-            onTileClick={handleTileClick}
-            selectedPosition={selectedPosition}
-            highlightPath={highlightPath}
-            isProcessing={isProcessing}
-          />
+        {board && isPlaying ? (
+          <div role="main" aria-label="游戏棋盘区域">
+            <Board
+              board={board}
+              onTileClick={handleTileClick}
+              selectedPosition={selectedPosition}
+              highlightPath={highlightPath}
+              isProcessing={isProcessing}
+            />
+          </div>
+        ) : board && !isPlaying ? (
+          <div
+            className="bg-white p-8 rounded-lg shadow-lg text-center"
+            role="status"
+            aria-live="polite"
+            aria-atomic="true"
+          >
+            <div className="text-6xl mb-4" aria-hidden="true">🎉</div>
+            <h3 className="text-2xl font-bold text-gray-900 mb-2">恭喜完成！</h3>
+            <p className="text-gray-600 mb-4">
+              上局成绩已保存，准备开始新游戏
+            </p>
+            <div className="flex gap-3 justify-center flex-wrap">
+              <button
+                onClick={startNewGame}
+                className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold transition-colors"
+                aria-label="立即开始新游戏"
+              >
+                立即开始新游戏
+              </button>
+            </div>
+          </div>
         ) : (
-          <div className="bg-white p-8 rounded-lg shadow-lg text-center">
+          <div
+            className="bg-white p-8 rounded-lg shadow-lg text-center"
+            role="main"
+            aria-label="游戏开始区域"
+          >
             <p className="text-gray-800 font-medium mb-4">选择难度并点击"开始游戏"来开始</p>
             <button
               onClick={startNewGame}
               className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold transition-colors"
+              aria-label="开始游戏"
             >
               开始游戏
             </button>

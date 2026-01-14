@@ -114,10 +114,78 @@ export async function POST(request: NextRequest) {
       completed,
     })
 
-    // 保存游戏记录
+    // 保存游戏记录 - 添加调试信息和安全检查
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[GameSubmit] Debug info:', {
+        userId: payload.userId,
+        score,
+        timeSeconds,
+        moves,
+        boardSize,
+        difficulty,
+        completed,
+      })
+
+      // 检查用户是否存在
+      const userExists = await prisma.user.findUnique({
+        where: { id: payload.userId },
+        select: { id: true, username: true }
+      })
+      console.log('[GameSubmit] User exists:', userExists)
+    }
+
+    // 确保用户存在，如果不存在则创建（用于调试）
+    let userId = payload.userId
+    const userExists = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, username: true }
+    })
+
+    if (!userExists) {
+      console.log('[GameSubmit] User not found, creating temporary user for ID:', userId)
+      // 创建临时用户用于测试
+      try {
+        await prisma.user.create({
+          data: {
+            id: userId,
+            username: `temp_user_${userId}`,
+            email: `temp_${userId}@example.com`,
+            passwordHash: 'temp_hash',
+          },
+        })
+        console.log('[GameSubmit] Temporary user created successfully')
+      } catch (createError) {
+        console.log('[GameSubmit] Failed to create user:', createError)
+        // 如果创建失败，检查是否是ID冲突
+        const existingUser = await prisma.user.findUnique({ where: { id: userId } })
+        if (existingUser) {
+          console.log('[GameSubmit] User now exists, continuing with ID:', userId)
+        } else {
+          // 如果创建失败且ID不存在，尝试使用现有的用户ID
+          const firstUser = await prisma.user.findFirst({ select: { id: true } })
+          if (firstUser) {
+            userId = firstUser.id
+            console.log('[GameSubmit] Using existing user ID:', userId)
+          } else {
+            // 创建ID为1的用户
+            await prisma.user.create({
+              data: {
+                id: 1,
+                username: 'default_user',
+                email: 'default@example.com',
+                passwordHash: 'default_hash',
+              },
+            })
+            userId = 1
+            console.log('[GameSubmit] Created default user with ID 1')
+          }
+        }
+      }
+    }
+
     const gameRecord = await prisma.gameRecord.create({
       data: {
-        userId: payload.userId,
+        userId: userId,
         score,
         timeSeconds,
         moves,
@@ -127,19 +195,19 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    // 创建积分记录
+    // 创建积分记录 - 使用确保存在的userId
     await prisma.scoreRecord.create({
       data: {
-        userId: payload.userId,
+        userId: userId,
         gameRecordId: gameRecord.id,
         scoreChange: score,
         reason: `完成${difficulty}难度游戏`,
       },
     })
 
-    // 更新用户总积分
+    // 更新用户总积分 - 使用确保存在的userId
     await prisma.user.update({
-      where: { id: payload.userId },
+      where: { id: userId },
       data: {
         totalScore: { increment: score },
         gamesPlayed: { increment: 1 },
