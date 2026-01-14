@@ -1,8 +1,6 @@
-import Link from 'next/link'
-
 export default function Home() {
   return (
-    <div className="bg-gradient-to-br from-blue-50 to-purple-50 flex flex-col items-center justify-center py-12 px-4">
+    <div className="bg-gradient-to-br from-blue-50 to-purple-50 flex flex-col items-center justify-center py-12 px-4 min-h-[calc(100vh-4rem)]">
       <div className="max-w-2xl w-full bg-white rounded-2xl shadow-2xl p-8 md:p-12">
         {/* 标题区域 */}
         <div className="text-center mb-8">
@@ -27,39 +25,9 @@ export default function Home() {
             <p className="text-sm text-purple-800">保存进度，追踪你的游戏成就</p>
           </div>
           <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
-            <h3 className="font-bold text-orange-900 mb-2">⚡ 实时对战</h3>
+            <h3 className="font-bold text-orange-900 mb-2">⚡ 快速挑战</h3>
             <p className="text-sm text-orange-800">挑战自我，创造最佳成绩</p>
           </div>
-        </div>
-
-        {/* 快速开始 */}
-        <div className="text-center space-y-3">
-          <div className="flex flex-wrap justify-center gap-3">
-            <Link
-              href="/login"
-              className="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-semibold"
-            >
-              登录
-            </Link>
-            <Link
-              href="/register"
-              className="px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors font-semibold"
-            >
-              注册
-            </Link>
-            <Link
-              href="/game"
-              className="px-6 py-3 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors font-semibold"
-            >
-              开始游戏
-            </Link>
-          </div>
-          <Link
-            href="/leaderboard"
-            className="inline-block px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
-          >
-            查看排行榜 →
-          </Link>
         </div>
 
         {/* 游戏说明 */}
@@ -74,10 +42,13 @@ export default function Home() {
           </ol>
         </div>
 
-        {/* 开发信息 */}
-        <div className="mt-6 text-center text-xs text-gray-600 font-medium">
-          <p>Next.js + SQLite + TypeScript</p>
+        {/* 快速提示 */}
+        <div className="mt-6 bg-blue-50 p-4 rounded-lg border border-blue-200 text-center">
+          <p className="text-sm text-blue-900 font-medium">
+            💡 使用顶部导航栏开始游戏、查看排行榜或管理账户
+          </p>
         </div>
+
       </div>
     </div>
   )

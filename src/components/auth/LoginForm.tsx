@@ -30,8 +30,8 @@ export default function LoginForm() {
 
       success('登录成功！欢迎回来！')
       setTimeout(() => {
-        info('正在进入游戏...')
-        router.push('/game')
+        info('正在跳转到首页...')
+        router.push('/')
         router.refresh()
       }, 800)
     } catch (err: any) {
