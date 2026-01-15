@@ -6,16 +6,8 @@ const nextConfig: NextConfig = {
       bodySizeLimit: '2mb'
     }
   },
-  // 确保 Prisma 客户端正确解析
-  webpack: (config, { isServer }) => {
-    if (isServer) {
-      config.resolve.alias = {
-        ...config.resolve.alias,
-        '.prisma/client': require.resolve('./src/generated/prisma')
-      }
-    }
-    return config;
-  }
+  // Turbopack 配置（空配置以避免警告）
+  turbopack: {}
 };
 
 export default nextConfig;
