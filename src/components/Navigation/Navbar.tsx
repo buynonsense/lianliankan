@@ -3,11 +3,14 @@
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useToast } from '@/context/ToastContext'
+import { useAuth } from '@/hooks/useAuth'
+import UserMenu from './UserMenu'
 
 export default function Navbar() {
   const pathname = usePathname()
   const router = useRouter()
   const { success, info } = useToast()
+  const { authenticated, user, loading, logout } = useAuth()
 
   const navigation = [
     { name: '首页', href: '/' },
@@ -77,7 +80,18 @@ export default function Navbar() {
               </button>
             )}
 
-            {isAuthPage ? (
+            {/* 认证状态显示 */}
+            {loading ? (
+              // 加载状态
+              <div className="hidden md:flex items-center space-x-2">
+                <div className="w-8 h-8 rounded-full bg-gray-200 animate-pulse"></div>
+                <div className="h-4 w-20 bg-gray-200 rounded animate-pulse"></div>
+              </div>
+            ) : authenticated && user ? (
+              // 已登录 - 显示用户菜单
+              <UserMenu user={user} onLogout={logout} />
+            ) : isAuthPage ? (
+              // 认证页面 - 只显示返回首页
               <div className="flex items-center space-x-2">
                 {pathname === '/login' && (
                   <Link
@@ -103,6 +117,7 @@ export default function Navbar() {
                 </Link>
               </div>
             ) : (
+              // 未登录 - 显示登录/注册按钮
               <div className="hidden md:flex md:items-center md:space-x-2">
                 {authNavigation.map((item) => (
                   <Link
@@ -144,6 +159,26 @@ export default function Navbar() {
                 >
                   🏆
                 </Link>
+                {/* 移动端登录/用户按钮 */}
+                {!loading && (
+                  authenticated && user ? (
+                    <button
+                      onClick={() => router.push('/profile')}
+                      className="px-2 py-1 text-sm font-medium text-blue-600 hover:text-blue-700"
+                      title="个人档案"
+                    >
+                      👤
+                    </button>
+                  ) : !isAuthPage && (
+                    <Link
+                      href="/login"
+                      className="px-2 py-1 text-sm font-medium text-blue-600 hover:text-blue-700"
+                      title="登录"
+                    >
+                      🔒
+                    </Link>
+                  )
+                )}
               </div>
             </div>
           </div>
