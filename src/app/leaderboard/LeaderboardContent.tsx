@@ -12,14 +12,29 @@ interface LeaderboardEntry {
   gamesPlayed: number
 }
 
+// 简单的客户端缓存，用于提升切榜体验
+const leaderboardCache: Record<string, { data: LeaderboardEntry[], timestamp: number }> = {}
+const CACHE_DURATION = 30000 // 30秒
+
 export default function LeaderboardContent() {
   const [type, setType] = useState<'total' | 'daily' | 'weekly'>('total')
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([])
   const [loading, setLoading] = useState(true)
   const { error, info } = useToast()
 
-  const fetchLeaderboard = useCallback(async () => {
-    setLoading(true)
+  const fetchLeaderboard = useCallback(async (isInitial = false) => {
+    // 检查缓存
+    const cached = leaderboardCache[type]
+    const now = Date.now()
+    
+    if (cached && (now - cached.timestamp < CACHE_DURATION)) {
+      setLeaderboard(cached.data)
+      setLoading(false)
+      // 如果不是初次加载，可以在后台刷新
+      if (!isInitial) return 
+    } else {
+      setLoading(true)
+    }
 
     try {
       const res = await fetch(`/api/leaderboard?type=${type}&limit=20`)
@@ -30,9 +45,11 @@ export default function LeaderboardContent() {
       }
 
       setLeaderboard(data.leaderboard)
+      // 更新缓存
+      leaderboardCache[type] = { data: data.leaderboard, timestamp: now }
       
       const label = type === 'total' ? '殿堂总榜' : type === 'daily' ? '今日之星' : '本周强者'
-      info(`已加载${label}`)
+      if (!isInitial) info(`已刷新${label}`)
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : '未知错误'
       error(message)
@@ -42,7 +59,7 @@ export default function LeaderboardContent() {
   }, [type, error, info])
 
   useEffect(() => {
-    fetchLeaderboard()
+    fetchLeaderboard(true)
   }, [fetchLeaderboard])
 
   const getTypeLabel = () => {

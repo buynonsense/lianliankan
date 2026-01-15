@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/database/client'
 
+// 缓存排行榜 30 秒，减少对数据库的频繁访问
+export const revalidate = 30
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)

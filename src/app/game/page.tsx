@@ -51,19 +51,15 @@ export default function GamePage() {
   // 开始新游戏
   const startNewGame = useCallback(async () => {
     try {
-      const res = await fetch('/api/game/start', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ difficulty }),
-      })
+      // 优化：在客户端直接生成棋盘，消除网络延迟感
+      // 这里的逻辑应与服务器保持一致，但响应是即时的
+      const { generateBoard } = await import('@/lib/game/logic')
+      const { getGameConfig } = await import('@/lib/game/scoring')
+      
+      const config = getGameConfig(difficulty)
+      const newBoard = generateBoard(config.size, config.tileTypes)
 
-      const data = await res.json()
-
-      if (!res.ok) {
-        throw new Error(data.error || '无法开始游戏')
-      }
-
-      setBoard(data.game.board)
+      setBoard(newBoard)
       setIsPlaying(true)
       setIsPaused(false)
       setSelectedPosition(null)
@@ -72,7 +68,17 @@ export default function GamePage() {
       setMoves(0)
       setScore(0)
       setStartTime(Date.now())
+      
       success('游戏开始！加油！')
+
+      // 在后台同步或验证（如果需要记录游戏开始，目前 schema 似乎没有这个需求）
+      /* 
+      fetch('/api/game/start', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ difficulty }),
+      }).catch(console.error)
+      */
     } catch (err: unknown) {
       if (err instanceof Error) {
         error(err.message)
