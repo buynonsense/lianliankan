@@ -1,55 +1,95 @@
+'use client'
+
+import { motion } from 'framer-motion'
+import Link from 'next/link'
+import { Play, Trophy, Users, Zap, Star } from 'lucide-react'
+
 export default function Home() {
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: { 
+      opacity: 1,
+      transition: { staggerChildren: 0.1, delayChildren: 0.3 }
+    }
+  }
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0, transition: { type: 'spring' as const, stiffness: 100 } },
+  }
+
+  const features = [
+    { icon: Star, title: '多种难度', desc: '从新手到大师的进阶之路', color: 'bg-pink-100 text-pink-500' },
+    { icon: Trophy, title: '积分排行', desc: '争夺荣誉之巅的全球竞技', color: 'bg-blue-100 text-blue-500' },
+    { icon: Users, title: '社交互动', desc: '展示你的成就，追踪进步', color: 'bg-purple-100 text-purple-500' },
+    { icon: Zap, title: '快速挑战', desc: '在毫秒之间超越自我的界限', color: 'bg-orange-100 text-orange-500' }
+  ]
+
   return (
-    <div className="bg-gradient-to-br from-blue-50 to-purple-50 flex flex-col items-center justify-center py-12 px-4 min-h-[calc(100vh-4rem)]">
-      <div className="max-w-2xl w-full bg-white rounded-2xl shadow-2xl p-8 md:p-12">
-        {/* 标题区域 */}
-        <div className="text-center mb-8">
-          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-2">
-            🎮 连连看游戏
+    <div className="relative min-h-screen overflow-hidden flex flex-col items-center justify-center pt-20 px-6">
+      {/* 背景动态元素 */}
+      <div className="absolute top-20 right-[10%] w-64 h-64 bg-primary/10 rounded-full blur-[80px] animate-pulse"></div>
+      <div className="absolute bottom-20 left-[10%] w-96 h-96 bg-secondary/10 rounded-full blur-[100px] animate-pulse delay-700"></div>
+
+      <motion.div 
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+        className="max-w-5xl w-full text-center relative z-10"
+      >
+        <motion.div variants={itemVariants} className="mb-12">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/50 border border-primary/10 text-primary font-bold text-xs uppercase tracking-widest mb-6 backdrop-blur-sm">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+            </span>
+            New Aesthetic Version
+          </div>
+          <h1 className="text-6xl md:text-8xl font-black text-foreground mb-6 leading-tight">
+            连接<span className="text-primary italic">想象力</span><br/>重定义<span className="text-secondary">经典</span>
           </h1>
-          <p className="text-gray-700 font-medium">经典消除游戏，挑战你的观察力和反应速度</p>
-        </div>
-
-        {/* 游戏特色 */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-          <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-            <h3 className="font-bold text-blue-900 mb-2">🎯 多种难度</h3>
-            <p className="text-sm text-blue-800">简单、中等、困难三种模式任你选择</p>
-          </div>
-          <div className="bg-green-50 p-4 rounded-lg border border-green-200">
-            <h3 className="font-bold text-green-900 mb-2">🏆 积分排行</h3>
-            <p className="text-sm text-green-800">全球玩家排行榜，看谁是真正的高手</p>
-          </div>
-          <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
-            <h3 className="font-bold text-purple-900 mb-2">👤 用户系统</h3>
-            <p className="text-sm text-purple-800">保存进度，追踪你的游戏成就</p>
-          </div>
-          <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
-            <h3 className="font-bold text-orange-900 mb-2">⚡ 快速挑战</h3>
-            <p className="text-sm text-orange-800">挑战自我，创造最佳成绩</p>
-          </div>
-        </div>
-
-        {/* 游戏说明 */}
-        <div className="mt-8 pt-8 border-t border-gray-300">
-          <h3 className="font-bold text-lg mb-3 text-gray-900">游戏玩法</h3>
-          <ol className="list-decimal list-inside space-y-2 text-gray-800 text-sm font-medium">
-            <li>点击选择一个方块，再点击另一个相同图案的方块进行消除</li>
-            <li>两个方块之间的连接路径不能超过2个拐点</li>
-            <li>消除所有方块即可完成游戏</li>
-            <li>时间越短、步数越少，获得的积分越多</li>
-            <li>完成游戏后积分会自动计入排行榜</li>
-          </ol>
-        </div>
-
-        {/* 快速提示 */}
-        <div className="mt-6 bg-blue-50 p-4 rounded-lg border border-blue-200 text-center">
-          <p className="text-sm text-blue-900 font-medium">
-            💡 使用顶部导航栏开始游戏、查看排行榜或管理账户
+          <p className="max-w-xl mx-auto text-foreground/50 text-xl font-medium leading-relaxed">
+            这不仅是一款游戏。这是一场视觉的盛宴，一次逻辑的旅行。在极简与唯美中，感受消除的纯粹快感。
           </p>
-        </div>
+        </motion.div>
 
-      </div>
+        <motion.div variants={itemVariants} className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-24">
+          <Link href="/game" className="group relative px-10 py-5 bg-primary text-white rounded-2xl font-black text-xl shadow-2xl shadow-primary/20 transition-all hover:scale-105 active:scale-95 overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
+            <div className="flex items-center gap-2 relative z-10">
+              <Play fill="currentColor" size={24} />
+              <span>立即启程</span>
+            </div>
+          </Link>
+          <Link href="/leaderboard" className="px-10 py-5 bg-white text-foreground/70 rounded-2xl font-black text-xl border border-primary/10 shadow-xl transition-all hover:bg-white/80 hover:scale-105">
+            查看全球排名
+          </Link>
+        </motion.div>
+
+        <motion.div 
+          variants={itemVariants}
+          className="grid grid-cols-1 md:grid-cols-4 gap-6 text-left"
+        >
+          {features.map((feature, idx) => (
+            <div key={idx} className="glass group p-6 rounded-[2rem] border border-white/50 transition-all hover:-translate-y-2 hover:bg-white/80">
+              <div className={`w-12 h-12 ${feature.color} rounded-2xl flex items-center justify-center mb-6 transition-transform group-hover:rotate-12`}>
+                <feature.icon size={24} />
+              </div>
+              <h3 className="text-lg font-black text-foreground mb-2">{feature.title}</h3>
+              <p className="text-sm text-foreground/40 font-medium leading-relaxed">{feature.desc}</p>
+            </div>
+          ))}
+        </motion.div>
+
+        {/* 到底提示 */}
+        <motion.div 
+          variants={itemVariants}
+          className="mt-20 flex flex-col items-center gap-2 text-foreground/30 font-bold text-[10px] uppercase tracking-tighter"
+        >
+          <div className="w-1 h-12 bg-gradient-to-b from-primary/50 to-transparent rounded-full animate-bounce"></div>
+          向下滚动发现更多
+        </motion.div>
+      </motion.div>
     </div>
   )
 }

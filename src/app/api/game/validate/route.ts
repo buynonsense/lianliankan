@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { canConnect, Position, Board, removeTiles, isGameCompleted, hasPossibleMoves, shuffleBoard } from '@/lib/game/logic'
+import { canConnect, removeTiles, isGameCompleted, hasPossibleMoves, shuffleBoard } from '@/lib/game/logic'
 
 export async function POST(request: NextRequest) {
   try {

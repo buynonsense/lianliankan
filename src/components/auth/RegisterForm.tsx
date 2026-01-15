@@ -3,6 +3,9 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useToast } from '@/context/ToastContext'
+import FullScreenTransition from '@/components/Navigation/FullScreenTransition'
+import { motion } from 'framer-motion'
+import { UserPlus, User, Mail, Lock, Loader2 } from 'lucide-react'
 
 export default function RegisterForm() {
   const [username, setUsername] = useState('')
@@ -10,8 +13,9 @@ export default function RegisterForm() {
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [loading, setLoading] = useState(false)
+  const [showTransition, setShowTransition] = useState(false)
   const router = useRouter()
-  const { success, error, warning, info } = useToast()
+  const { success, error, warning } = useToast()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -42,71 +46,107 @@ export default function RegisterForm() {
       }
 
       success('注册成功！欢迎加入连连看！')
+      setShowTransition(true)
       setTimeout(() => {
-        info('正在进入游戏...')
-        router.push('/game')
+        router.push('/')
         router.refresh()
-      }, 1000)
-    } catch (err: any) {
-      error(err.message)
+      }, 1500)
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : '注册失败'
+      error(message)
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <div className="w-full max-w-md">
-      <h2 className="text-2xl font-bold text-center mb-6 text-gray-900">注册</h2>
-      <form onSubmit={handleSubmit} className="space-y-4">
+    <motion.div 
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      className="p-2"
+    >
+      <FullScreenTransition isVisible={showTransition} />
+      
+      <div className="flex flex-col items-center mb-8">
+        <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mb-4">
+          <UserPlus className="text-primary w-8 h-8" />
+        </div>
+        <h2 className="text-3xl font-bold text-foreground">加入治愈社区</h2>
+        <p className="text-foreground/60 mt-2">创建您的专属账号</p>
+      </div>
+
+      <form onSubmit={handleSubmit} className="space-y-6">
         <div>
-          <label className="block text-sm font-semibold mb-1 text-gray-800">用户名</label>
+          <label className="flex items-center gap-2 text-sm font-medium mb-2 text-foreground/80">
+            <User size={16} className="text-primary" />
+            用户名
+          </label>
           <input
             type="text"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-400 rounded focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-green-600 text-gray-900 font-medium"
+            className="w-full px-4 py-3 bg-white border border-primary/10 rounded-2xl focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary/30 transition-all text-gray-900"
+            placeholder="为自己取个好听的名字"
             required
           />
         </div>
         <div>
-          <label className="block text-sm font-semibold mb-1 text-gray-800">邮箱</label>
+          <label className="flex items-center gap-2 text-sm font-medium mb-2 text-foreground/80">
+            <Mail size={16} className="text-primary" />
+            电子邮箱
+          </label>
           <input
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-400 rounded focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-green-600 text-gray-900 font-medium"
+            className="w-full px-4 py-3 bg-white border border-primary/10 rounded-2xl focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary/30 transition-all text-gray-900"
+            placeholder="example@email.com"
             required
           />
         </div>
         <div>
-          <label className="block text-sm font-semibold mb-1 text-gray-800">密码</label>
+          <label className="flex items-center gap-2 text-sm font-medium mb-2 text-foreground/80">
+            <Lock size={16} className="text-primary" />
+            设置密码
+          </label>
           <input
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-400 rounded focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-green-600 text-gray-900 font-medium"
+            className="w-full px-4 py-3 bg-white border border-primary/10 rounded-2xl focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary/30 transition-all text-gray-900"
+            placeholder="至少 6 位字符"
             required
-            minLength={6}
           />
         </div>
         <div>
-          <label className="block text-sm font-semibold mb-1 text-gray-800">确认密码</label>
+          <label className="flex items-center gap-2 text-sm font-medium mb-2 text-foreground/80">
+            <Lock size={16} className="text-primary" />
+            确认密码
+          </label>
           <input
             type="password"
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-400 rounded focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-green-600 text-gray-900 font-medium"
+            className="w-full px-4 py-3 bg-white border border-primary/10 rounded-2xl focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary/30 transition-all text-gray-900"
+            placeholder="再次输入密码以确认"
             required
           />
         </div>
         <button
           type="submit"
-          disabled={loading}
-          className="w-full bg-green-600 text-white py-2 rounded font-semibold hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          disabled={loading || showTransition}
+          className="w-full bg-primary text-white py-4 rounded-2xl font-bold hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-primary/20 flex items-center justify-center gap-2"
         >
-          {loading ? '注册中...' : '注册'}
+          {loading ? (
+            <Loader2 className="w-5 h-5 animate-spin" />
+          ) : (
+            <>
+              <UserPlus size={20} />
+              <span>立即开启</span>
+            </>
+          )}
         </button>
       </form>
-    </div>
+    </motion.div>
   )
 }

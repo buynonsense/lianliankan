@@ -2,10 +2,12 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
+import { motion, AnimatePresence } from 'framer-motion'
 import Board from '@/components/game/Board'
 import GameControls from '@/components/game/GameControls'
 import { Board as BoardType, Position, Tile as TileType } from '@/lib/game/logic'
 import { useToast } from '@/context/ToastContext'
+import { Trophy, Gamepad2, Timer, Footprints, Info } from 'lucide-react'
 
 export default function GamePage() {
   const router = useRouter()
@@ -71,8 +73,12 @@ export default function GamePage() {
       setScore(0)
       setStartTime(Date.now())
       success('游戏开始！加油！')
-    } catch (error: any) {
-      error(error.message)
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        error(err.message)
+      } else {
+        error('无法开始游戏')
+      }
     }
   }, [difficulty, success, error])
 
@@ -128,8 +134,12 @@ export default function GamePage() {
           })
         }
       }
-    } catch (error: any) {
-      error(error.message)
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        error(err.message)
+      } else {
+        error('保存成绩失败')
+      }
     }
   }, [startTime, moves, difficulty, board, success, error])
 
@@ -210,8 +220,12 @@ export default function GamePage() {
         warning('无法连接这两个方块', 2000)
         setIsVerifying(false)
       }
-    } catch (error: any) {
-      error(error.message)
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        error(err.message)
+      } else {
+        error('验证失败')
+      }
       setSelectedPosition(null)
       setHighlightPath([])  // 清空路径，避免遗留状态
       setIsVerifying(false)
@@ -245,148 +259,197 @@ export default function GamePage() {
     }
   }
 
-  // 查看排行榜
-  const handleViewLeaderboard = () => {
-    success('正在跳转到排行榜...')
-    router.push('/leaderboard')
-  }
-
   return (
-    <div className="max-w-4xl mx-auto px-4 py-6">
-      {/* 页面标题和操作栏 */}
-      <div className="flex justify-between items-center mb-6">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={handleGoHome}
-            className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors font-medium flex items-center gap-2"
+    <div className="min-h-screen py-24 px-4 bg-[radial-gradient(circle_at_top_right,_var(--primary),_transparent_40%)]">
+      <div className="max-w-6xl mx-auto">
+        <div className="flex flex-col lg:flex-row gap-12 items-start justify-center">
+          {/* 左侧：游戏信息与控制 */}
+          <motion.div 
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="w-full lg:w-80 space-y-8 order-2 lg:order-1 lg:sticky lg:top-24"
           >
-            ← 返回首页
-          </button>
-          <h1 className="text-3xl font-bold text-gray-900">连连看游戏</h1>
-        </div>
+            <div className="glass p-8 rounded-[2rem] space-y-6">
+              <h2 className="text-2xl font-bold text-foreground/80 flex items-center gap-2">
+                <Trophy size={24} className="text-primary" />
+                <span>实时状态</span>
+              </h2>
+              
+              <div className="grid grid-cols-1 gap-4">
+                <div className="bg-white/40 p-5 rounded-2xl border border-primary/5 group transition-all hover:bg-white/60">
+                  <div className="flex items-center gap-3 mb-1">
+                    <Trophy size={16} className="text-primary/60" />
+                    <p className="text-xs font-semibold text-foreground/50 uppercase tracking-widest">当前得分</p>
+                  </div>
+                  <p className="text-4xl font-black text-primary tabular-nums group-hover:scale-105 transition-transform origin-left">{score}</p>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-white/40 p-4 rounded-2xl border border-primary/5 flex flex-col items-center">
+                    <Timer size={18} className="text-primary/60 mb-2" />
+                    <p className="text-[10px] font-bold text-foreground/40 uppercase mb-1">耗时</p>
+                    <p className="text-2xl font-black text-primary/80 tabular-nums">{time}s</p>
+                  </div>
+                  <div className="bg-white/40 p-4 rounded-2xl border border-primary/5 flex flex-col items-center">
+                    <Footprints size={18} className="text-primary/60 mb-2" />
+                    <p className="text-[10px] font-bold text-foreground/40 uppercase mb-1">步数</p>
+                    <p className="text-2xl font-black text-primary/80 tabular-nums">{moves}</p>
+                  </div>
+                </div>
+              </div>
 
-        {/* 游戏完成后的快捷操作 */}
-        {!isPlaying && board && (
-          <div className="flex gap-2 items-center">
-            <button
-              onClick={startNewGame}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
-              aria-label="立即开始新游戏"
-            >
-              立即开始新游戏
-            </button>
-            <button
-              onClick={handleViewLeaderboard}
-              className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors font-medium"
-              aria-label="查看排行榜"
-            >
-              查看排行榜
-            </button>
-          </div>
-        )}
-      </div>
-
-      {/* 游戏控制栏 */}
-      <div className="flex justify-center mb-6">
-        <GameControls
-          difficulty={difficulty}
-          onDifficultyChange={setDifficulty}
-          onNewGame={startNewGame}
-          onPause={togglePause}
-          isPaused={isPaused}
-          isPlaying={isPlaying}
-          time={time}
-          moves={moves}
-          score={score}
-        />
-      </div>
-
-      {/* 游戏棋盘 */}
-      <div className="flex justify-center mb-6">
-        {board && isPlaying ? (
-          <div role="main" aria-label="游戏棋盘区域">
-            <Board
-              board={board}
-              onTileClick={handleTileClick}
-              selectedPosition={selectedPosition}
-              highlightPath={highlightPath}
-              isProcessing={isVerifying}
-            />
-          </div>
-        ) : board && !isPlaying ? (
-          <div
-            className="bg-white p-8 rounded-lg shadow-lg text-center"
-            role="status"
-            aria-live="polite"
-            aria-atomic="true"
-          >
-            <div className="text-6xl mb-4" aria-hidden="true">🎉</div>
-            <h3 className="text-2xl font-bold text-gray-900 mb-2">恭喜完成！</h3>
-            <p className="text-gray-600 mb-4">
-              上局成绩已保存，准备开始新游戏
-            </p>
-            <div className="flex gap-3 justify-center flex-wrap">
-              <button
-                onClick={startNewGame}
-                className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold transition-colors"
-                aria-label="立即开始新游戏"
-              >
-                立即开始新游戏
-              </button>
+              <div className="pt-4 border-t border-primary/5">
+                <GameControls
+                  difficulty={difficulty}
+                  onDifficultyChange={setDifficulty}
+                  onNewGame={startNewGame}
+                  onPause={togglePause}
+                  isPaused={isPaused}
+                  isPlaying={isPlaying}
+                />
+              </div>
             </div>
-          </div>
-        ) : (
-          <div
-            className="bg-white p-8 rounded-lg shadow-lg text-center"
-            role="main"
-            aria-label="游戏开始区域"
-          >
-            <p className="text-gray-800 font-medium mb-4">选择难度并点击"开始游戏"来开始</p>
-            <button
-              onClick={startNewGame}
-              className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold transition-colors"
-              aria-label="开始游戏"
-            >
-              开始游戏
-            </button>
-          </div>
-        )}
-      </div>
 
-      {/* 游戏说明 */}
-      <div className="max-w-2xl mx-auto bg-white rounded-lg shadow-lg p-6">
-        <h3 className="font-bold text-lg mb-2 text-gray-900">游戏说明</h3>
-        <ul className="text-sm text-gray-800 font-medium space-y-1 list-disc list-inside">
-          <li>点击选择方块，再次点击另一个相同图案的方块进行消除</li>
-          <li>连接路径不能超过2个拐点</li>
-          <li>消除所有方块即可获胜</li>
-          <li>时间越短、步数越少，得分越高</li>
-          <li>如果没有可消除的方块，系统会自动重新洗牌</li>
-        </ul>
-      </div>
-
-      {/* 暂停遮罩 */}
-      {isPaused && isPlaying && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-8 rounded-lg text-center shadow-2xl">
-            <h2 className="text-2xl font-bold mb-4 text-gray-900">⏸ 游戏暂停</h2>
-            <div className="flex gap-3 justify-center">
-              <button
-                onClick={togglePause}
-                className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold transition-colors"
-              >
-                继续游戏
-              </button>
-              <button
-                onClick={handleGoHome}
-                className="px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 font-semibold transition-colors"
-              >
-                返回首页
-              </button>
+            {/* 玩法说明 */}
+            <div className="glass p-6 rounded-[1.5rem] bg-white/30 border border-white/40">
+              <h3 className="font-bold text-sm mb-4 text-foreground/70 flex items-center gap-2">
+                <Info size={16} className="text-primary" />
+                玩法指南
+              </h3>
+              <ul className="text-xs text-foreground/60 space-y-3 leading-relaxed font-medium">
+                <li className="flex gap-2">
+                  <span className="text-primary">•</span>
+                  <span>点击两个相同图案的方块进行消除</span>
+                </li>
+                <li className="flex gap-2">
+                  <span className="text-primary">•</span>
+                  <span>连接路径不能超过 2 个拐点</span>
+                </li>
+                <li className="flex gap-2">
+                  <span className="text-primary">•</span>
+                  <span>消除速度越快，最终得分加成越高</span>
+                </li>
+                <li className="flex gap-2">
+                  <span className="text-primary">•</span>
+                  <span>无路可走时，棋盘会自动进行洗牌</span>
+                </li>
+              </ul>
             </div>
-          </div>
+          </motion.div>
+
+          {/* 右侧：游戏棋盘 */}
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex-1 flex flex-col items-center order-1 lg:order-2"
+          >
+            <AnimatePresence mode="wait">
+              {!isPlaying ? (
+                <motion.div 
+                  key="start-screen"
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.9 }}
+                  className="glass p-12 md:p-16 rounded-[3rem] text-center max-w-lg w-full relative overflow-hidden group"
+                >
+                  <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary/30 to-transparent"></div>
+                  
+                  <div className="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-8 relative">
+                    <div className="absolute inset-0 bg-primary/5 rounded-full animate-ping"></div>
+                    <Gamepad2 size={48} className="text-primary relative z-10" />
+                  </div>
+                  
+                  {board ? (
+                    <>
+                      <h1 className="text-4xl font-black text-foreground mb-4">精彩完成！</h1>
+                      <p className="text-foreground/60 mb-10 leading-relaxed font-medium">
+                        美妙的连结！成绩已成功同步至云端。<br/>要尝试更高难度的挑战吗？
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <h1 className="text-4xl font-black text-foreground mb-4">开启治愈之旅</h1>
+                      <p className="text-foreground/60 mb-10 leading-relaxed font-medium">
+                        在方块的碰撞中寻找宁静。<br/>放空心灵，享受这一场视觉与逻辑的盛宴。
+                      </p>
+                    </>
+                  )}
+                  
+                  <div className="flex flex-col gap-4">
+                    <button
+                      onClick={startNewGame}
+                      className="px-10 py-5 bg-primary text-white rounded-2xl font-bold shadow-2xl shadow-primary/20 hover:scale-105 active:scale-95 transition-all w-full text-xl"
+                    >
+                      {board ? '再来一局' : '开始游戏'}
+                    </button>
+                    {!board && (
+                      <button
+                        onClick={handleGoHome}
+                        className="text-foreground/40 font-bold hover:text-primary transition-colors text-sm"
+                      >
+                        返回首页
+                      </button>
+                    )}
+                  </div>
+                </motion.div>
+              ) : (
+                <motion.div 
+                  key="game-board"
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="relative group"
+                >
+                  <div className="absolute -inset-10 bg-primary/5 rounded-[4rem] blur-3xl group-hover:blur-[5rem] transition-all opacity-40"></div>
+                  
+                  <div className="relative">
+                    {board && (
+                      <Board
+                        board={board}
+                        onTileClick={handleTileClick}
+                        selectedPosition={selectedPosition}
+                        highlightPath={highlightPath}
+                        isProcessing={isVerifying}
+                      />
+                    )}
+                  </div>
+
+                  <AnimatePresence>
+                    {isPaused && (
+                      <motion.div 
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="absolute inset-0 z-50 glass rounded-[3rem] flex items-center justify-center backdrop-blur-md"
+                      >
+                        <div className="text-center p-8">
+                          <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-8">
+                            <Timer size={40} className="text-primary animate-pulse" />
+                          </div>
+                          <h2 className="text-5xl font-black text-primary mb-12">已暂停</h2>
+                          <div className="flex flex-col gap-4">
+                            <button
+                              onClick={togglePause}
+                              className="px-12 py-5 bg-primary text-white rounded-2xl font-bold hover:scale-105 transition-all text-xl shadow-xl shadow-primary/20"
+                            >
+                              继续游戏
+                            </button>
+                            <button
+                              onClick={handleGoHome}
+                              className="px-12 py-5 bg-white/50 text-foreground/70 rounded-2xl font-bold hover:bg-white transition-all"
+                            >
+                              返回首页
+                            </button>
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.div>
         </div>
-      )}
+      </div>
     </div>
   )
 }

@@ -7,7 +7,6 @@ import { calculateScore, validateGameResult, getGameConfig } from '@/lib/game/sc
 const submitAttempts = new Map<string, number>()
 
 const RATE_LIMIT_WINDOW = 30 * 1000 // 30秒
-const MAX_SUBMITS_PER_WINDOW = 5
 
 function checkRateLimit(userId: number): boolean {
   const now = Date.now()
@@ -49,7 +48,13 @@ export async function POST(request: NextRequest) {
     }
 
     // 解析并验证请求体
-    let body: any
+    let body: {
+      timeSeconds: number
+      moves: number
+      boardSize: number
+      difficulty: string
+      completed: boolean
+    }
     try {
       body = await request.json()
     } catch {

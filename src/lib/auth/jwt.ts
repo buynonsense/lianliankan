@@ -19,7 +19,7 @@ export async function createToken(payload: JWTPayload): Promise<string> {
 
   const secret = new TextEncoder().encode(JWT_SECRET)
 
-  return await new SignJWT(payload as any)
+  return await new SignJWT(payload as unknown as Record<string, unknown>)
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
     .setExpirationTime(JWT_EXPIRES_IN)
@@ -41,7 +41,7 @@ export async function verifyToken(token: string): Promise<JWTPayload | null> {
       userId: parseInt(payload.sub!),
       username: payload.username as string,
     }
-  } catch (error) {
+  } catch {
     return null
   }
 }

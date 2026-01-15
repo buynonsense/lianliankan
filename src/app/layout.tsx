@@ -1,19 +1,9 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ToastProvider } from "@/context/ToastContext";
 import ToastContainer from "@/components/Notification/ToastContainer";
 import Navbar from "@/components/Navigation/Navbar";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+import PageTransition from "@/components/Navigation/PageTransition";
 
 export const metadata: Metadata = {
   title: "连连看游戏",
@@ -27,13 +17,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="zh-CN">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
+      <body className="antialiased">
         <ToastProvider>
           <Navbar />
-          <main className="min-h-screen bg-gray-100">
-            {children}
+          <main className="min-h-screen">
+            <PageTransition>{children}</PageTransition>
           </main>
           <ToastContainer />
         </ToastProvider>

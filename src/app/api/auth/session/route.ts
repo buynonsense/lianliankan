@@ -1,8 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { getAuthCookie, verifyToken } from '@/lib/auth/jwt'
 import { prisma } from '@/lib/database/client'
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const token = await getAuthCookie()
 

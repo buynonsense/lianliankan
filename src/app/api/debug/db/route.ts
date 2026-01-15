@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/database/client'
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     // 测试数据库连接
     const users = await prisma.user.findMany({

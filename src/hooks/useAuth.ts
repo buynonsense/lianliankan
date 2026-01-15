@@ -72,7 +72,10 @@ export function useAuth() {
   }
 
   useEffect(() => {
-    checkAuth()
+    const initAuth = async () => {
+      await checkAuth()
+    }
+    initAuth()
   }, [])
 
   return {

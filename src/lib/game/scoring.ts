@@ -38,7 +38,7 @@ function isValidDifficulty(difficulty: string): difficulty is keyof typeof GAME_
 }
 
 // 调试日志（仅在开发环境）
-function debugLog(...args: any[]): void {
+function debugLog(...args: unknown[]): void {
   if (GAME_CONSTANTS.DEBUG) {
     console.log('[GameScoring]', ...args)
   }

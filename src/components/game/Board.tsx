@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback, useMemo, useLayoutEffect } from 'react'
+import { useState, useEffect, useRef, useCallback, useLayoutEffect } from 'react'
 import { Board as BoardType, Position, Tile as TileType } from '@/lib/game/logic'
 import Tile from './Tile'
 
@@ -25,10 +25,6 @@ export default function Board({ board, onTileClick, selectedPosition, highlightP
   const isMountedRef = useRef<boolean>(true)
   const resizeObserverRef = useRef<ResizeObserver | null>(null)
 
-  // 优化：使用 memoized 计算路径点集合，避免重复计算
-  const pathSet = useMemo(() => {
-    return new Set(highlightPath.map(pos => `${pos.row}-${pos.col}`))
-  }, [highlightPath])
 
   // 优化：只在路径变化时计算位置，使用 requestAnimationFrame
   // 使用 ref 存储最新值，避免依赖循环
@@ -88,19 +84,14 @@ export default function Board({ board, onTileClick, selectedPosition, highlightP
   // 优化：使用 useLayoutEffect 替代 useEffect + setTimeout，获得更可靠的 DOM 时序
   // 只依赖 highlightPath，避免循环依赖
   useLayoutEffect(() => {
-    if (highlightPath.length === 0) {
-      setTilePositions(prev => prev.size === 0 ? prev : new Map())
-      return
+    if (highlightPath.length > 0) {
+      updateTilePositions()
     }
-
-    // 立即更新位置，无需延迟
-    updateTilePositions()
-  }, [highlightPath])
+  }, [highlightPath, updateTilePositions])
 
   // 优化：抖动动画逻辑
   useEffect(() => {
     if (highlightPath.length === 0) {
-      setShake(false)
       return
     }
 
@@ -209,7 +200,7 @@ export default function Board({ board, onTileClick, selectedPosition, highlightP
         resizeObserverRef.current.disconnect()
       }
     }
-  }, [highlightPath])
+  }, [highlightPath, updateTilePositions])
 
   // 优化：组件生命周期管理
   useEffect(() => {
@@ -233,13 +224,13 @@ export default function Board({ board, onTileClick, selectedPosition, highlightP
   const pathData = generatePath()
 
   return (
-    <div ref={containerRef} className="relative inline-block p-4 bg-gray-800 rounded-lg">
+    <div ref={containerRef} className="relative inline-block p-6 glass rounded-[2rem]">
       {/* 方块网格层 - 底层 */}
       <div
-        className="grid gap-1 grid-container"
+        className="grid gap-2 grid-container"
         style={{
           gridTemplateColumns: `repeat(${board[0].length}, 1fr)`,
-          gap: '4px',
+          gap: '8px',
           position: 'relative',
           zIndex: 1
         }}
@@ -257,20 +248,17 @@ export default function Board({ board, onTileClick, selectedPosition, highlightP
                 data-row={rowIndex}
                 data-col={colIndex}
                 onClick={() => {
-                  // 只在验证过程中禁用点击（防止重复请求）
-                  // 验证完成后立即允许新的点击，无需等待动画结束
                   if (isProcessing) return
                   onTileClick({ row: rowIndex, col: colIndex }, tile)
                 }}
                 className={`
                   w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20
-                  rounded-lg cursor-pointer transition-all duration-200
+                  rounded-2xl cursor-pointer transition-all duration-300
                   flex items-center justify-center relative
-                  ${isCurrentSelected ? 'ring-4 ring-yellow-400 scale-110 z-10' : ''}
-                  ${isPath ? 'bg-gray-600' : 'bg-gray-700 hover:bg-gray-600'}
+                  ${isCurrentSelected ? 'ring-4 ring-primary/30 scale-105 z-10 shadow-xl' : ''}
+                  ${isPath ? 'bg-primary/5' : 'bg-white/40 hover:bg-white/60'}
                   ${shouldShake ? 'animate-bounce' : ''}
                   ${isProcessing ? 'opacity-75' : ''}
-                  ${highlightPath.length > 0 && !isPath && !isCurrentSelected ? 'opacity-90' : ''}
                 `}
                 style={isCurrentSelected ? { position: 'relative', zIndex: 10 } : {}}
               >
@@ -282,38 +270,33 @@ export default function Board({ board, onTileClick, selectedPosition, highlightP
       </div>
 
       {/*
-        SVG 连接线层 - 顶层，覆盖在方块上方
-        使用双层路径实现发光效果：
-        - 外层：较宽，半透明，营造发光感
-        - 内层：较细，高亮，显示实际路径
-        注意：使用 pointer-events-none 确保点击能穿透到下方的方块
+        SVG 连接线层 - 顶层
       */}
       {pathData && (
         <svg
           className="absolute inset-0 pointer-events-none"
           style={{ width: '100%', height: '100%', zIndex: 2 }}
-          role="img"
-          aria-label={`连接路径：${highlightPath.length} 个方块`}
         >
-          {/* 发光层 - 较宽，半透明 */}
+          {/* 发光层 */}
           <path
             d={pathData}
-            stroke="#86efac"
-            strokeWidth="8"
+            stroke="var(--primary)"
+            strokeWidth="10"
             fill="none"
             strokeLinecap="round"
             strokeLinejoin="round"
-            opacity="0.3"
+            opacity="0.2"
+            className="animate-pulse"
           />
-          {/* 主路径层 - 较细，高亮 */}
+          {/* 主路径层 */}
           <path
             d={pathData}
-            stroke="#4ade80"
-            strokeWidth="3"
+            stroke="var(--primary)"
+            strokeWidth="4"
             fill="none"
             strokeLinecap="round"
             strokeLinejoin="round"
-            opacity="0.8"
+            opacity="0.6"
           />
         </svg>
       )}

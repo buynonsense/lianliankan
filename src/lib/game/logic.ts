@@ -205,8 +205,8 @@ export function removeTiles(board: Board, positions: Position[]): Board {
 
 // 检查游戏是否完成
 export function isGameCompleted(board: Board): boolean {
-  for (let row of board) {
-    for (let tile of row) {
+  for (const row of board) {
+    for (const tile of row) {
       if (tile !== null) return false
     }
   }

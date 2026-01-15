@@ -2,8 +2,9 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { useAuth } from '@/hooks/useAuth'
 import { useToast } from '@/context/ToastContext'
+import { motion, AnimatePresence } from 'framer-motion'
+import { User, LogOut, ChevronDown, Gamepad2, Settings } from 'lucide-react'
 
 interface UserMenuProps {
   user: {
@@ -55,80 +56,106 @@ export default function UserMenu({ user, onLogout }: UserMenuProps) {
       {/* 用户头像/按钮 */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center space-x-2 px-3 py-2 rounded-md hover:bg-gray-100 transition-colors focus:outline-none"
+        className="flex items-center gap-3 px-2 py-2 rounded-[2rem] hover:bg-white/60 transition-all active:scale-95 group"
       >
-        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-sm">
-          {user.username.charAt(0).toUpperCase()}
+        <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-[#f8ad9d] via-[#fbc4ab] to-[#ffddd2] p-[2px] shadow-lg shadow-primary/20 group-hover:shadow-primary/40 transition-all duration-500">
+          <div className="w-full h-full bg-white/40 backdrop-blur-md rounded-full flex items-center justify-center text-primary font-black text-sm border border-white/40">
+            {user.username.charAt(0).toUpperCase()}
+          </div>
         </div>
-        <span className="hidden md:inline text-sm font-medium text-gray-700">
-          {user.username}
-        </span>
-        <svg
-          className={`w-4 h-4 text-gray-600 transition-transform ${isOpen ? 'rotate-180' : ''}`}
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-        </svg>
+        <div className="hidden md:flex flex-col items-start gap-0.5">
+          <span className="text-sm font-black text-foreground/80 leading-none">
+            {user.username}
+          </span>
+          <span className="text-[10px] font-bold text-primary italic leading-none uppercase tracking-tighter">
+            Score: {user.totalScore.toLocaleString()}
+          </span>
+        </div>
+        <ChevronDown
+          size={16}
+          className={`text-foreground/30 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}
+        />
       </button>
 
       {/* 下拉菜单 */}
-      {isOpen && (
-        <div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50 animate-in fade-in slide-in-from-top-2">
-          {/* 用户信息头部 */}
-          <div className="px-4 py-3 border-b border-gray-100">
-            <div className="flex items-center space-x-3 mb-2">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold">
-                {user.username.charAt(0).toUpperCase()}
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: 10, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 10, scale: 0.95 }}
+            className="absolute right-0 mt-3 w-72 glass rounded-[2rem] border border-white/50 shadow-2xl shadow-primary/10 overflow-hidden z-50 pt-6 pb-2"
+          >
+            {/* 用户信息头部 */}
+            <div className="px-6 pb-6 border-b border-primary/5">
+              <div className="flex items-center gap-4 mb-4">
+                <div className="w-14 h-14 rounded-full bg-gradient-to-tr from-[#f8ad9d] via-[#fbc4ab] to-[#ffddd2] p-[2.5px] shadow-xl shadow-primary/10">
+                  <div className="w-full h-full bg-white/40 backdrop-blur-md rounded-full flex items-center justify-center text-primary font-black text-xl border border-white/40">
+                    {user.username.charAt(0).toUpperCase()}
+                  </div>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-base font-black text-foreground truncate uppercase tracking-tight">{user.username}</p>
+                  <p className="text-xs font-bold text-foreground/40 truncate">{user.email}</p>
+                </div>
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-gray-900 truncate">{user.username}</p>
-                <p className="text-xs text-gray-500 truncate">{user.email}</p>
+              
+              <div className="grid grid-cols-2 gap-2">
+                <div className="bg-white/40 border border-white/50 px-3 py-2 rounded-xl flex flex-col items-center">
+                  <span className="text-[10px] font-black text-foreground/30 uppercase tracking-widest leading-none mb-1">总分</span>
+                  <span className="text-sm font-black text-primary tabular-nums">{user.totalScore}</span>
+                </div>
+                <div className="bg-white/40 border border-white/50 px-3 py-2 rounded-xl flex flex-col items-center">
+                  <span className="text-[10px] font-black text-foreground/30 uppercase tracking-widest leading-none mb-1">局数</span>
+                  <span className="text-sm font-black text-secondary tabular-nums">{user.gamesPlayed}</span>
+                </div>
               </div>
             </div>
-            <div className="flex justify-between text-xs text-gray-600 mt-2">
-              <span>总分: <span className="font-semibold text-blue-600">{user.totalScore}</span></span>
-              <span>局数: <span className="font-semibold text-purple-600">{user.gamesPlayed}</span></span>
-            </div>
-          </div>
 
-          {/* 菜单项 */}
-          <div className="py-1">
-            <button
-              onClick={handleProfile}
-              className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors flex items-center space-x-2"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-              </svg>
-              <span>个人档案</span>
-            </button>
-            <button
-              onClick={() => {
-                router.push('/leaderboard')
-                setIsOpen(false)
-              }}
-              className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors flex items-center space-x-2"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-              </svg>
-              <span>排行榜</span>
-            </button>
-            <div className="border-t border-gray-100 my-1"></div>
-            <button
-              onClick={handleLogout}
-              className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors flex items-center space-x-2"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-              </svg>
-              <span>退出登录</span>
-            </button>
-          </div>
-        </div>
-      )}
+            {/* 菜单项 */}
+            <div className="p-2 space-y-1">
+              <button
+                onClick={handleProfile}
+                className="w-full flex items-center justify-between px-4 py-3 text-sm font-bold text-foreground/70 hover:bg-primary hover:text-white rounded-xl transition-all group"
+              >
+                <div className="flex items-center gap-3">
+                  <User size={18} />
+                  <span>个人档案</span>
+                </div>
+                <div className="w-1.5 h-1.5 rounded-full bg-primary group-hover:bg-white transition-colors" />
+              </button>
+
+              <button
+                onClick={() => { router.push('/game'); setIsOpen(false); }}
+                className="w-full flex items-center px-4 py-3 text-sm font-bold text-foreground/70 hover:bg-white/60 rounded-xl transition-all"
+              >
+                <div className="flex items-center gap-3 text-secondary">
+                  <Gamepad2 size={18} />
+                  <span className="text-foreground/70">开始新游戏</span>
+                </div>
+              </button>
+
+              <div className="h-px bg-primary/5 my-2" />
+
+              <button
+                onClick={handleLogout}
+                className="w-full flex items-center px-4 py-3 text-sm font-bold text-red-400 hover:bg-red-50 rounded-xl transition-all"
+              >
+                <div className="flex items-center gap-3">
+                  <LogOut size={18} />
+                  <span>退出登录</span>
+                </div>
+              </button>
+            </div>
+            
+            <div className="px-6 py-3 bg-primary/5 flex items-center justify-center gap-2">
+               <span className="text-[10px] font-black text-foreground/20 uppercase tracking-widest flex items-center gap-1">
+                 <Settings size={10} /> System Profile v2.4
+               </span>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }

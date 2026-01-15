@@ -1,36 +1,41 @@
 import { memo } from 'react'
+import { motion } from 'framer-motion'
 
 interface TileProps {
   type: number
 }
 
 const Tile = memo(({ type }: TileProps) => {
-  // 预定义的颜色和图标（使用更深的颜色提高对比度）
+  // 预定义的柔和色彩主题
   const tileStyles = [
-    { bg: 'bg-red-600', icon: '🔴' },
-    { bg: 'bg-blue-600', icon: '🔵' },
-    { bg: 'bg-green-600', icon: '🟢' },
-    { bg: 'bg-yellow-600', icon: '🟡' },
-    { bg: 'bg-purple-600', icon: '🟣' },
-    { bg: 'bg-orange-600', icon: '🟠' },
-    { bg: 'bg-pink-600', icon: '💗' },
-    { bg: 'bg-cyan-600', icon: '💎' },
-    { bg: 'bg-indigo-600', icon: '⭐' },
-    { bg: 'bg-teal-600', icon: '✨' },
-    { bg: 'bg-lime-600', icon: '🍀' },
-    { bg: 'bg-rose-600', icon: '🌸' },
-    { bg: 'bg-fuchsia-600', icon: '🔮' },
-    { bg: 'bg-amber-600', icon: '⚡' },
-    { bg: 'bg-emerald-600', icon: '🌿' },
-    { bg: 'bg-sky-600', icon: '🌙' },
+    { bg: 'from-pink-100 to-pink-200', text: 'text-pink-600', icon: '🌸' },
+    { bg: 'from-blue-100 to-blue-200', text: 'text-blue-600', icon: '💎' },
+    { bg: 'from-purple-100 to-purple-200', text: 'text-purple-600', icon: '🔮' },
+    { bg: 'from-orange-100 to-orange-200', text: 'text-orange-600', icon: '🍊' },
+    { bg: 'from-green-100 to-green-200', text: 'text-green-600', icon: '🍃' },
+    { bg: 'from-yellow-100 to-yellow-200', text: 'text-yellow-600', icon: '🌙' },
+    { bg: 'from-indigo-100 to-indigo-200', text: 'text-indigo-600', icon: '⭐' },
+    { bg: 'from-rose-100 to-rose-200', text: 'text-rose-600', icon: '🌹' },
+    { bg: 'from-cyan-100 to-cyan-200', text: 'text-cyan-600', icon: '🫧' },
+    { bg: 'from-teal-100 to-teal-200', text: 'text-teal-600', icon: '🍀' },
+    { bg: 'from-amber-100 to-amber-200', text: 'text-amber-600', icon: '⚡' },
+    { bg: 'from-emerald-100 to-emerald-200', text: 'text-emerald-600', icon: '🌿' },
   ]
 
   const style = tileStyles[type % tileStyles.length]
 
   return (
-    <div className={`w-8 h-8 sm:w-12 sm:h-12 md:w-16 md:h-16 ${style.bg} rounded-md flex items-center justify-center text-white text-xl sm:text-2xl md:text-3xl shadow-lg font-bold`}>
-      {style.icon}
-    </div>
+    <motion.div 
+      whileHover={{ scale: 1.05, y: -2 }}
+      whileTap={{ scale: 0.95 }}
+      initial={{ opacity: 0, scale: 0.8 }}
+      animate={{ opacity: 1, scale: 1 }}
+      className={`w-10 h-10 sm:w-16 sm:h-16 md:w-20 md:h-20 bg-gradient-to-br ${style.bg} rounded-2xl flex items-center justify-center ${style.text} text-2xl sm:text-3xl md:text-4xl shadow-sm border border-white/40 backdrop-blur-sm transition-shadow hover:shadow-lg font-bold group`}
+    >
+      <span className="drop-shadow-sm group-hover:scale-110 transition-transform duration-300">
+        {style.icon}
+      </span>
+    </motion.div>
   )
 })
 

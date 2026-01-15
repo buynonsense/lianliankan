@@ -3,13 +3,17 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useToast } from '@/context/ToastContext'
+import FullScreenTransition from '@/components/Navigation/FullScreenTransition'
+import { LogIn, User, Lock, Loader2 } from 'lucide-react'
+import { motion } from 'framer-motion'
 
 export default function LoginForm() {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
+  const [showTransition, setShowTransition] = useState(false)
   const router = useRouter()
-  const { success, error, info } = useToast()
+  const { success, error } = useToast()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -29,50 +33,79 @@ export default function LoginForm() {
       }
 
       success('登录成功！欢迎回来！')
+      setShowTransition(true)
       setTimeout(() => {
-        info('正在跳转到首页...')
         router.push('/')
         router.refresh()
-      }, 800)
-    } catch (err: any) {
-      error(err.message)
+      }, 1500)
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : '登录失败'
+      error(message)
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <div className="w-full max-w-md">
-      <h2 className="text-2xl font-bold text-center mb-6 text-gray-900">登录</h2>
-      <form onSubmit={handleSubmit} className="space-y-4">
+    <motion.div 
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      className="p-2"
+    >
+      <FullScreenTransition isVisible={showTransition} />
+      
+      <div className="flex flex-col items-center mb-8">
+        <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mb-4">
+          <LogIn className="text-primary w-8 h-8" />
+        </div>
+        <h2 className="text-3xl font-bold text-foreground">开启游戏之旅</h2>
+        <p className="text-foreground/60 mt-2">很高兴再次见到你</p>
+      </div>
+
+      <form onSubmit={handleSubmit} className="space-y-6">
         <div>
-          <label className="block text-sm font-semibold mb-1 text-gray-800">用户名</label>
+          <label className="flex items-center gap-2 text-sm font-medium mb-2 text-foreground/80">
+            <User size={16} className="text-primary" />
+            用户名
+          </label>
           <input
             type="text"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-400 rounded focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600 text-gray-900 font-medium"
+            className="w-full px-4 py-3 bg-white border border-primary/10 rounded-2xl focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary/30 transition-all text-gray-900"
+            placeholder="输入您的用户名"
             required
           />
         </div>
         <div>
-          <label className="block text-sm font-semibold mb-1 text-gray-800">密码</label>
+          <label className="flex items-center gap-2 text-sm font-medium mb-2 text-foreground/80">
+            <Lock size={16} className="text-primary" />
+            密码
+          </label>
           <input
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-400 rounded focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600 text-gray-900 font-medium"
+            className="w-full px-4 py-3 bg-white border border-primary/10 rounded-2xl focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary/30 transition-all text-gray-900"
+            placeholder="••••••••"
             required
           />
         </div>
         <button
           type="submit"
-          disabled={loading}
-          className="w-full bg-blue-600 text-white py-2 rounded font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          disabled={loading || showTransition}
+          className="w-full bg-primary text-white py-4 rounded-2xl font-bold hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-primary/20 flex items-center justify-center gap-2"
         >
-          {loading ? '登录中...' : '登录'}
+          {loading ? (
+            <Loader2 className="w-5 h-5 animate-spin" />
+          ) : (
+            <>
+              <LogIn size={20} />
+              <span>开始登录</span>
+            </>
+          )}
         </button>
       </form>
-    </div>
+    </motion.div>
   )
 }

@@ -1,5 +1,8 @@
 'use client'
 
+import { Play, RotateCcw, Pause, PlayCircle } from 'lucide-react'
+import { motion } from 'framer-motion'
+
 interface GameControlsProps {
   difficulty: string
   onDifficultyChange: (difficulty: string) => void
@@ -7,9 +10,6 @@ interface GameControlsProps {
   onPause: () => void
   isPaused: boolean
   isPlaying: boolean
-  time: number
-  moves: number
-  score: number
 }
 
 export default function GameControls({
@@ -19,66 +19,98 @@ export default function GameControls({
   onPause,
   isPaused,
   isPlaying,
-  time,
-  moves,
-  score,
 }: GameControlsProps) {
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60)
-    const secs = seconds % 60
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
-  }
+  const difficulties = [
+    { id: 'easy', label: '初级', size: '6x6' },
+    { id: 'medium', label: '中级', size: '8x8' },
+    { id: 'hard', label: '高级', size: '10x10' },
+  ]
 
   return (
-    <div className="w-full max-w-2xl bg-white rounded-lg shadow-lg p-4">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        {/* 难度选择 */}
-        <div className="flex gap-2">
-          <select
-            value={difficulty}
-            onChange={(e) => onDifficultyChange(e.target.value)}
-            disabled={isPlaying}
-            className="px-3 py-2 border border-gray-400 rounded font-medium focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600 text-gray-900"
-          >
-            <option value="easy">简单 (6x6)</option>
-            <option value="medium">中等 (8x8)</option>
-            <option value="hard">困难 (10x10)</option>
-          </select>
-        </div>
-
-        {/* 游戏统计 */}
-        <div className="flex gap-4 text-sm font-mono">
-          <div className="flex flex-col items-center">
-            <span className="text-gray-700 font-semibold">时间</span>
-            <span className="text-lg font-bold text-blue-700">{formatTime(time)}</span>
-          </div>
-          <div className="flex flex-col items-center">
-            <span className="text-gray-700 font-semibold">步数</span>
-            <span className="text-lg font-bold text-green-700">{moves}</span>
-          </div>
-          <div className="flex flex-col items-center">
-            <span className="text-gray-700 font-semibold">得分</span>
-            <span className="text-lg font-bold text-purple-700">{score}</span>
-          </div>
-        </div>
-
-        {/* 控制按钮 */}
-        <div className="flex gap-2">
-          <button
-            onClick={onNewGame}
-            className="px-4 py-2 bg-blue-600 text-white rounded font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
-            {isPlaying ? '重新开始' : '开始游戏'}
-          </button>
-          {isPlaying && (
+    <div className="space-y-6">
+      {/* 难度选择器 */}
+      <div className="space-y-3">
+        <label className="text-xs font-bold text-foreground/40 uppercase tracking-widest pl-1">
+          难度选择
+        </label>
+        <div className="grid grid-cols-3 gap-2">
+          {difficulties.map((d) => (
             <button
-              onClick={onPause}
-              className="px-4 py-2 bg-yellow-600 text-white rounded font-semibold hover:bg-yellow-700 transition-colors"
+              key={d.id}
+              disabled={isPlaying}
+              onClick={() => onDifficultyChange(d.id)}
+              className={`
+                relative px-3 py-4 rounded-xl border-2 transition-all duration-300 group
+                ${difficulty === d.id 
+                  ? 'border-primary bg-primary/5 shadow-lg shadow-primary/5' 
+                  : 'border-transparent bg-white/40 hover:bg-white/60'}
+                ${isPlaying ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+              `}
             >
-              {isPaused ? '继续' : '暂停'}
+              <div className="flex flex-col items-center gap-1">
+                <span className={`text-sm font-black ${difficulty === d.id ? 'text-primary' : 'text-foreground/70'}`}>
+                  {d.label}
+                </span>
+                <span className={`text-[10px] font-bold ${difficulty === d.id ? 'text-primary/60' : 'text-foreground/30'}`}>
+                  {d.size}
+                </span>
+              </div>
+              {difficulty === d.id && (
+                <motion.div 
+                  layoutId="active-difficulty"
+                  className="absolute -top-1 -right-1 w-3 h-3 bg-primary rounded-full border-2 border-white shadow-sm"
+                />
+              )}
             </button>
-          )}
+          ))}
         </div>
+      </div>
+
+      {/* 操作按钮 */}
+      <div className="flex flex-col gap-3">
+        <button
+          onClick={onNewGame}
+          className="group relative px-6 py-4 bg-primary text-white rounded-2xl font-black text-lg overflow-hidden transition-all hover:scale-[1.02] active:scale-[0.98] shadow-xl shadow-primary/20"
+        >
+          <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+          <div className="flex items-center justify-center gap-2 relative z-10">
+            {isPlaying ? (
+              <>
+                <RotateCcw size={20} className="group-hover:rotate-180 transition-transform duration-500" />
+                <span>重新开始</span>
+              </>
+            ) : (
+              <>
+                <Play size={20} fill="currentColor" />
+                <span>立即开始</span>
+              </>
+            )}
+          </div>
+        </button>
+
+        {isPlaying && (
+          <button
+            onClick={onPause}
+            className={`
+              px-6 py-4 rounded-2xl font-black text-lg transition-all flex items-center justify-center gap-2
+              ${isPaused 
+                ? 'bg-secondary text-white shadow-xl shadow-secondary/20 hover:scale-[1.02]' 
+                : 'bg-white/60 text-foreground/60 hover:bg-white/80'}
+            `}
+          >
+            {isPaused ? (
+              <>
+                <PlayCircle size={20} />
+                <span>继续游戏</span>
+              </>
+            ) : (
+              <>
+                <Pause size={20} />
+                <span>暂停休息</span>
+              </>
+            )}
+          </button>
+        )}
       </div>
     </div>
   )
