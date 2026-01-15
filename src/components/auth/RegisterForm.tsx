@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useToast } from '@/context/ToastContext'
+import { useAuth } from '@/hooks/useAuth'
 import FullScreenTransition from '@/components/Navigation/FullScreenTransition'
 import { motion } from 'framer-motion'
 import { UserPlus, User, Mail, Lock, Loader2 } from 'lucide-react'
@@ -16,6 +17,7 @@ export default function RegisterForm() {
   const [showTransition, setShowTransition] = useState(false)
   const router = useRouter()
   const { success, error, warning } = useToast()
+  const { checkAuth } = useAuth()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -44,6 +46,9 @@ export default function RegisterForm() {
       if (!res.ok) {
         throw new Error(data.error || '注册失败')
       }
+
+      // 立即更新全局认证状态
+      await checkAuth()
 
       success('注册成功！欢迎加入连连看！')
       setShowTransition(true)

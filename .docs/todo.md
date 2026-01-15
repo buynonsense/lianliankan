@@ -22,3 +22,5 @@
 - [x] 修复构建相关的语法错误 (Navbar, Auth Forms, Tile)
 - [x] 彻底移除对外部谷歌字体的依赖，确保离线构建稳定
 - [x] 全站 ESLint/TypeScript 规范清理，实现“零错误/零警告”编译态
+- [x] 消息通知系统 (Toast) 重构，支持玻璃态交互与 Framer Motion 动画
+- [x] 引入全局 AuthContext 解决导航栏认证状态同步延迟问题

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { ToastProvider } from "@/context/ToastContext";
+import { AuthProvider } from "@/context/AuthContext";
 import ToastContainer from "@/components/Notification/ToastContainer";
 import Navbar from "@/components/Navigation/Navbar";
 import PageTransition from "@/components/Navigation/PageTransition";
@@ -18,13 +19,15 @@ export default function RootLayout({
   return (
     <html lang="zh-CN">
       <body className="antialiased">
-        <ToastProvider>
-          <Navbar />
-          <main className="min-h-screen">
-            <PageTransition>{children}</PageTransition>
-          </main>
-          <ToastContainer />
-        </ToastProvider>
+        <AuthProvider>
+          <ToastProvider>
+            <Navbar />
+            <main className="min-h-screen">
+              <PageTransition>{children}</PageTransition>
+            </main>
+            <ToastContainer />
+          </ToastProvider>
+        </AuthProvider>
       </body>
     </html>
   );
