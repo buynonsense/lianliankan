@@ -256,7 +256,12 @@ export default function Board({ board, onTileClick, selectedPosition, highlightP
                 data-tile
                 data-row={rowIndex}
                 data-col={colIndex}
-                onClick={() => !isProcessing && onTileClick({ row: rowIndex, col: colIndex }, tile)}
+                onClick={() => {
+                  // 只在验证过程中禁用点击（防止重复请求）
+                  // 验证完成后立即允许新的点击，无需等待动画结束
+                  if (isProcessing) return
+                  onTileClick({ row: rowIndex, col: colIndex }, tile)
+                }}
                 className={`
                   w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20
                   rounded-lg cursor-pointer transition-all duration-200
@@ -264,7 +269,8 @@ export default function Board({ board, onTileClick, selectedPosition, highlightP
                   ${isCurrentSelected ? 'ring-4 ring-yellow-400 scale-110 z-10' : ''}
                   ${isPath ? 'bg-gray-600' : 'bg-gray-700 hover:bg-gray-600'}
                   ${shouldShake ? 'animate-bounce' : ''}
-                  ${isProcessing ? 'cursor-wait opacity-75' : ''}
+                  ${isProcessing ? 'opacity-75' : ''}
+                  ${highlightPath.length > 0 && !isPath && !isCurrentSelected ? 'opacity-90' : ''}
                 `}
                 style={isCurrentSelected ? { position: 'relative', zIndex: 10 } : {}}
               >

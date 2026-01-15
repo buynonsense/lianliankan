@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Board from '@/components/game/Board'
 import GameControls from '@/components/game/GameControls'
@@ -20,8 +20,11 @@ export default function GamePage() {
   const [time, setTime] = useState(0)
   const [moves, setMoves] = useState(0)
   const [score, setScore] = useState(0)
-  const [isProcessing, setIsProcessing] = useState(false)
+  const [isVerifying, setIsVerifying] = useState(false)
   const [startTime, setStartTime] = useState<number | null>(null)
+
+  // 用于清理动画timeout，防止竞态条件
+  const animationTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   // 游戏计时器
   useEffect(() => {
@@ -33,6 +36,15 @@ export default function GamePage() {
     }
     return () => clearInterval(interval)
   }, [isPlaying, isPaused, startTime])
+
+  // 清理动画timeout，防止内存泄漏
+  useEffect(() => {
+    return () => {
+      if (animationTimeoutRef.current) {
+        clearTimeout(animationTimeoutRef.current)
+      }
+    }
+  }, [])
 
   // 开始新游戏
   const startNewGame = useCallback(async () => {
@@ -63,71 +75,6 @@ export default function GamePage() {
       error(error.message)
     }
   }, [difficulty, success, error])
-
-  // 处理方块点击
-  const handleTileClick = useCallback(async (position: Position, tile: TileType | null) => {
-    if (!board || !isPlaying || isPaused || isProcessing) return
-
-    // 如果点击空位置，取消选择
-    if (!tile) {
-      setSelectedPosition(null)
-      return
-    }
-
-    // 如果没有选择，选择当前方块
-    if (!selectedPosition) {
-      setSelectedPosition(position)
-      return
-    }
-
-    // 如果点击同一个方块，取消选择
-    if (selectedPosition.row === position.row && selectedPosition.col === position.col) {
-      setSelectedPosition(null)
-      return
-    }
-
-    // 验证选择的两个方块
-    setIsProcessing(true)
-    try {
-      const res = await fetch('/api/game/validate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          board,
-          start: selectedPosition,
-          end: position,
-        }),
-      })
-
-      const data = await res.json()
-
-      if (data.valid) {
-        // 显示连接路径
-        setHighlightPath(data.path)
-
-        setTimeout(() => {
-          setBoard(data.newBoard)
-          setMoves(prev => prev + 1)
-          setHighlightPath([])
-          setSelectedPosition(null)
-
-          // 检查是否完成
-          if (data.completed) {
-            finishGame()
-          }
-        }, 500)
-      } else {
-        // 无效选择，显示错误提示
-        setSelectedPosition(null)
-        warning('无法连接这两个方块', 2000)
-      }
-    } catch (error: any) {
-      error(error.message)
-      setSelectedPosition(null)
-    } finally {
-      setIsProcessing(false)
-    }
-  }, [board, selectedPosition, isPlaying, isPaused, isProcessing])
 
   // 完成游戏
   const finishGame = useCallback(async () => {
@@ -185,6 +132,91 @@ export default function GamePage() {
       error(error.message)
     }
   }, [startTime, moves, difficulty, board, success, error])
+
+  // 处理方块点击
+  const handleTileClick = useCallback(async (position: Position, tile: TileType | null) => {
+    if (!board || !isPlaying || isPaused || isVerifying) return
+
+    // 如果点击空位置，取消选择
+    if (!tile) {
+      setSelectedPosition(null)
+      return
+    }
+
+    // 如果没有选择，选择当前方块
+    if (!selectedPosition) {
+      setSelectedPosition(position)
+      return
+    }
+
+    // 如果点击同一个方块，取消选择
+    if (selectedPosition.row === position.row && selectedPosition.col === position.col) {
+      setSelectedPosition(null)
+      return
+    }
+
+    // 防止快速连续点击同一对方块（在动画期间）
+    if (highlightPath.length > 0) {
+      const start = highlightPath[0]
+      const end = highlightPath[highlightPath.length - 1]
+      if ((start.row === position.row && start.col === position.col) ||
+          (end.row === position.row && end.col === position.col)) {
+        return
+      }
+    }
+
+    // 验证选择的两个方块
+    setIsVerifying(true)
+    try {
+      const res = await fetch('/api/game/validate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          board,
+          start: selectedPosition,
+          end: position,
+        }),
+      })
+
+      const data = await res.json()
+
+      if (data.valid) {
+        // 清理之前的timeout，防止竞态条件
+        if (animationTimeoutRef.current) {
+          clearTimeout(animationTimeoutRef.current)
+        }
+
+        // 立即显示连接路径并重置选中状态，让用户可以立即进行下一次点击
+        setHighlightPath(data.path)
+        setSelectedPosition(null)
+
+        // 立即允许新的点击（不等待动画结束）
+        setIsVerifying(false)
+
+        // 500ms后执行实际的棋盘更新和状态清理
+        animationTimeoutRef.current = setTimeout(() => {
+          setBoard(data.newBoard)
+          setMoves(prev => prev + 1)
+          setHighlightPath([])
+
+          // 检查是否完成
+          if (data.completed) {
+            finishGame()
+          }
+        }, 500)
+      } else {
+        // 无效选择，显示错误提示
+        setSelectedPosition(null)
+        warning('无法连接这两个方块', 2000)
+        setIsVerifying(false)
+      }
+    } catch (error: any) {
+      error(error.message)
+      setSelectedPosition(null)
+      setHighlightPath([])  // 清空路径，避免遗留状态
+      setIsVerifying(false)
+    }
+  }, [board, selectedPosition, isPlaying, isPaused, isVerifying, highlightPath, finishGame, warning, error])
 
   // 临时分数计算（客户端显示用）
   const calculateTempScore = (timeSeconds: number, moves: number, difficulty: string, boardSize: number) => {
@@ -278,7 +310,7 @@ export default function GamePage() {
               onTileClick={handleTileClick}
               selectedPosition={selectedPosition}
               highlightPath={highlightPath}
-              isProcessing={isProcessing}
+              isProcessing={isVerifying}
             />
           </div>
         ) : board && !isPlaying ? (
